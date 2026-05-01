@@ -1,13 +1,13 @@
 ---
 name: setup-pre-commit
-description: Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.
+description: Set up Lefthook pre-commit hooks with lint-staged (Biome), type checking, and tests in the current repo. Use when user wants to add pre-commit hooks, set up Husky, configure lint-staged, or add commit-time formatting/typechecking/testing.
 ---
 
 # Setup Pre-Commit Hooks
 
 ## What This Sets Up
 
-- **Husky** pre-commit hook
+- **Lefthook** pre-commit hook
 - **lint-staged** running Prettier on all staged files
 - **Prettier** config (if missing)
 - **typecheck** and **test** scripts in the pre-commit hook
@@ -23,69 +23,61 @@ Check for `package-lock.json` (npm), `pnpm-lock.yaml` (pnpm), `yarn.lock` (yarn)
 Install as devDependencies:
 
 ```
-husky lint-staged prettier
+lefthook
 ```
 
-### 3. Initialize Husky
+Add install pinnded devDependency:
+
+```
+@biomejs/biome -E
+```
+
+### 3. Setup Lefthook
+
+Run the following:
 
 ```bash
-npx husky init
+lefthook install
 ```
 
-This creates `.husky/` dir and adds `prepare: "husky"` to package.json.
+This creates an empty `lefthook.yml` for configuration.
 
-### 4. Create `.husky/pre-commit`
+### 4. Update `lefthook.yml`
 
-Write this file (no shebang needed for Husky v9+):
+Write this file
 
-```
-npx lint-staged
-npm run typecheck
-npm run test
-```
-
-**Adapt**: Replace `npm` with detected package manager. If repo has no `typecheck` or `test` script in package.json, omit those lines and tell the user.
-
-### 5. Create `.lintstagedrc`
-
-```json
-{
-  "*": "prettier --ignore-unknown --write"
-}
+```yaml
+pre-commit:
+  commands:
+    lint-format:
+      glob: "**/*.{js,ts,jsx,tsx,mjs,cjs,json,css}"
+      run: ./node_modules/.bin/biome check --write {staged_files}
+      stage_fixed: true
 ```
 
-### 6. Create `.prettierrc` (if missing)
+### 5. Setup Biome
 
-Only create if no Prettier config exists. Use these defaults:
-
-```json
-{
-  "useTabs": false,
-  "tabWidth": 2,
-  "printWidth": 80,
-  "singleQuote": false,
-  "trailingComma": "es5",
-  "semi": true,
-  "arrowParens": "always"
-}
+```bash
+npx @biomejs/biome init
 ```
 
-### 7. Verify
+**Adapt**: Replace npx with detected package manager (e.g. `pnpx`, `bunx --bun `).
 
-- [ ] `.husky/pre-commit` exists and is executable
-- [ ] `.lintstagedrc` exists
-- [ ] `prepare` script in package.json is `"husky"`
-- [ ] `prettier` config exists
-- [ ] Run `npx lint-staged` to verify it works
+This creates a default biome config file.
 
-### 8. Commit
+### 6. Verify
 
-Stage all changed/created files and commit with message: `Add pre-commit hooks (husky + lint-staged + prettier)`
+- [ ] `lefthook.yml` exists
+- [ ] `biome.json` exists
+- [ ] Run `lefthook validate` to verify it works
+
+### 7. Commit
+
+Stage all changed/created files and commit with message: `Add pre-commit hooks (lefthook + biome)`
 
 This will run through the new pre-commit hooks — a good smoke test that everything works.
 
 ## Notes
 
-- Husky v9+ doesn't need shebangs in hook files
-- `prettier --ignore-unknown` skips files Prettier can't parse (images, etc.)
+- `LEFTHOOK=0 git commit` skips running lefthook rules.
 - The pre-commit runs lint-staged first (fast, staged-only), then full typecheck and tests
